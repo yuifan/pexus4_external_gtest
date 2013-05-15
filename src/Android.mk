@@ -28,24 +28,15 @@
 
 LOCAL_PATH := $(call my-dir)
 
-ifeq ($(BUILD_WITH_ASTL),true)
-libgtest_includes:= \
+libgtest_target_includes := \
     bionic/libstdc++/include \
-    external/astl/include \
-    $(LOCAL_PATH)/.. \
-    $(LOCAL_PATH)/../include
-else
-# BUILD_WITH_ASTL could be undefined, force it to false.
-BUILD_WITH_ASTL := false
-libgtest_includes := \
-    bionic \
     external/stlport/stlport \
     $(LOCAL_PATH)/.. \
     $(LOCAL_PATH)/../include
-endif
 
-# Gtest depends on STLPort which does not build on host/simulator.
-ifeq ($(HOST_OS)-$(BUILD_WITH_ASTL),linux-true)
+libgtest_host_includes := \
+  $(LOCAL_PATH)/.. \
+  $(LOCAL_PATH)/../include
 
 #######################################################################
 # gtest lib host
@@ -56,12 +47,11 @@ LOCAL_CPP_EXTENSION := .cc
 
 LOCAL_SRC_FILES := gtest-all.cc
 
-LOCAL_C_INCLUDES := $(libgtest_includes)
+LOCAL_C_INCLUDES := $(libgtest_host_includes)
 
 LOCAL_CFLAGS += -O0
 
 LOCAL_MODULE := libgtest_host
-LOCAL_MODULE_TAGS := eng
 
 include $(BUILD_HOST_STATIC_LIBRARY)
 
@@ -74,18 +64,13 @@ LOCAL_CPP_EXTENSION := .cc
 
 LOCAL_SRC_FILES := gtest_main.cc
 
-LOCAL_C_INCLUDES := $(libgtest_includes)
+LOCAL_C_INCLUDES := $(libgtest_host_includes)
 
 LOCAL_CFLAGS += -O0
 
-LOCAL_STATIC_LIBRARIES := libgtest
-
 LOCAL_MODULE := libgtest_main_host
-LOCAL_MODULE_TAGS := eng
 
 include $(BUILD_HOST_STATIC_LIBRARY)
-
-endif # HOST_OS == linux
 
 #######################################################################
 # gtest lib target
@@ -96,10 +81,13 @@ LOCAL_CPP_EXTENSION := .cc
 
 LOCAL_SRC_FILES := gtest-all.cc
 
-LOCAL_C_INCLUDES := $(libgtest_includes)
+LOCAL_C_INCLUDES := $(libgtest_target_includes)
+
+ifneq ($(BUILD_WITH_ASTL),true)
+include external/stlport/libstlport.mk
+endif
 
 LOCAL_MODULE := libgtest
-LOCAL_MODULE_TAGS := eng
 
 include $(BUILD_STATIC_LIBRARY)
 
@@ -112,11 +100,12 @@ LOCAL_CPP_EXTENSION := .cc
 
 LOCAL_SRC_FILES := gtest_main.cc
 
-LOCAL_C_INCLUDES := $(libgtest_includes)
+LOCAL_C_INCLUDES := $(libgtest_target_includes)
 
-LOCAL_STATIC_LIBRARIES := libgtest
+ifneq ($(BUILD_WITH_ASTL),true)
+include external/stlport/libstlport.mk
+endif
 
 LOCAL_MODULE := libgtest_main
-LOCAL_MODULE_TAGS := eng
 
 include $(BUILD_STATIC_LIBRARY)
